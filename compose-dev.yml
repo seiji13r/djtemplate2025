@@ -1,0 +1,13 @@
+services:
+  webapp:
+    hostname: web-1
+    build:
+      context: ./webapp
+      dockerfile: Containerfile
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./webapp:/opt/webapp
+      - ./z_static:/opt/static
+      - ./z_media:/opt/media
+    ports:
+      - 8000:8000
