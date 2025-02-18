@@ -1,42 +1,51 @@
 FROM ubuntu:24.04
-# FROM debian:bookworm-slim
 
-ARG PYENV_PATH="/opt/venv"
-ARG CODE_PATH="/opt/webapp"
-ARG STATIC_PATH="/opt/static"
-ARG MEDIA_PATH="/opt/media"
+# Define application required directories
+ARG CODE_PATH="/opt/webapp/"
+ARG PYENV_PATH="/opt/venv/"
+ARG STATIC_PATH="/opt/static/"
+ARG MEDIA_PATH="/opt/media/"
+ARG BACKENDS_PATH="/opt/backends/"
 
+# Create Directories inside the image
 RUN mkdir ${CODE_PATH}
-RUN mkdir ${STATIC_PATH}
-RUN mkdir ${MEDIA_PATH}
-
 VOLUME ${CODE_PATH}
+RUN mkdir ${STATIC_PATH}
 VOLUME ${STATIC_PATH}
+RUN mkdir ${MEDIA_PATH}
 VOLUME ${MEDIA_PATH}
+RUN mkdir ${BACKENDS_PATH}
+VOLUME ${BACKENDS_PATH}
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        python3 \
-        python3-venv \
-        && rm -rf /var/lib/apt/lists/*
+# Install Ubuntu Dependencies
+RUN apt update && apt upgrade -y \
+    && apt install -y python3 python3-pip python3-venv \
+    netcat-traditional \
+    # libsasl2-dev libldap2-dev libssl-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Create virtual environment
+# # Libraries required to install python-ldap later if needed
+# RUN apt install -y libsasl2-dev libldap2-dev libssl-dev
+# # netcat to use nc and test connections # nc -z -v $HOST $PORT
+# RUN apt install netcat-traditional
+
+# Create the virtual environment
 RUN python3 -m venv ${PYENV_PATH}
 
 # Activate the virtual environment (important for subsequent commands)
 ENV VIRTUAL_ENV=${PYENV_PATH}
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-
-COPY ./requirements.txt .
 RUN pip install --upgrade pip
+
+COPY ./requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 RUN rm requirements.txt
 
-# Expose the port
+ENV PYTHONUNBUFFERED 1
 EXPOSE 8000
 
-# Set the working directory
-WORKDIR /opt/webapp
+WORKDIR ${CODE_PATH}
 
 # Command to run when the container starts
 # Example:
